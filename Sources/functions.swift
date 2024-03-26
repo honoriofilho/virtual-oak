@@ -7,12 +7,48 @@
 
 import Foundation
 
-let fileURL = URL(fileURLWithPath: "/Users/user/pokeData.json")
-let advURL = URL(fileURLWithPath: "/Users/user/adversario.json")
+//Uso em macOS
+//let fileURL = URL(fileURLWithPath: "/Users/user/pokeData.json")
+//let advURL = URL(fileURLWithPath: "/Users/user/adversario.json")
+//let boxesPATH = "/opt/homebrew/Cellar/boxes/2.3.0/bin/boxes"
+
+//Uso em Linux
+let boxesPATH = "/usr/bin/boxes"
+let fileURL = URL(fileURLWithPath: "/home/honorio/pokeData.json")
+let advURL = URL(fileURLWithPath: "/home/honorio/adversario.json")
 
 let linha = "================================================="
 
-// Função auxiliar: Limpa o terminal
+/*  Função utilizada para retornar um índice do array pokemons
+    O usuario informa no terminal um inteiro entre 0 e 3: se for verdadeiro,
+    a função retornar o numero selecionado; se não, a função retorna o número 0.
+*/
+func obterBuddyValido() -> Int {
+    while true {
+        print("Por favor, digite o número correspondente ao pokemon que deseja escolher: ")
+        if let input = readLine(), let numero = Int(input), (0...3).contains(numero) {
+            return numero
+        } else {
+            return 0
+        }
+    }
+}
+
+/*
+    Função exibe uma ASCII ART de um pokemon ao realizar a escolha do inicial
+     - Parameter buddy: Índice do array pokemons
+*/
+func showPokemons(buddy: Int){
+    switch buddy{
+    case 0: showPikachu();
+    case 1: showCharmander();
+    case 2: showSquirtle();
+    case 3: showBulbassaur();
+    default: print("")
+    }
+}
+
+// Função auxiliar para limpar o terminal
 func clearTerminalScreen() {
     let clear = Process()
     clear.launchPath = "/usr/bin/clear"
@@ -21,8 +57,13 @@ func clearTerminalScreen() {
     clear.waitUntilExit()
 }
 
+/*
+    Função utilizada para salvar um arquivo em JSON
+     - Parameters:
+       - path: Caminho do diretório onde o arquivo JSON será salvo
+       - buddy: Instância da struct Buddy
+*/
 func saveData(_ path:URL, buddy: Buddy){
-    // Instância da struct
 
     // Crie um objeto JSONEncoder
     let encoder = JSONEncoder()
@@ -31,7 +72,7 @@ func saveData(_ path:URL, buddy: Buddy){
     do {
         let jsonData = try encoder.encode(buddy)
 
-        // Converta JSON Data em String (opcional)
+        // Converte JSON Data em String (opcional)
         if let _jsonString = String(data: jsonData, encoding: .utf8) {
 
             // Gravar dados JSON no arquivo
@@ -43,7 +84,11 @@ func saveData(_ path:URL, buddy: Buddy){
     }
 }
 
-
+/*
+    Função para ler um arquivo JSON e transforma-lo em uma struct Buddy
+     - Parameter path: Caminho do diretório onde o arquivo JSON está salvo
+     - Returns: Uma instância da struct Buddy
+*/
 func readData(_ path:URL) -> Buddy?{
     do {
         // Ler os dados JSON do arquivo
@@ -65,29 +110,27 @@ func readData(_ path:URL) -> Buddy?{
     return nil
 }
 
-func cabecalho(titulo: String){
-    
-    let maxWidth = 90
-    let borda = "✦\(String(repeating: "-", count: 90))✦"
-    let paddingChar = " "
-//    let _paddingSize = (maxWidth - titulo.count) / 2
-    let paddingTitle = String(repeating: paddingChar, count: (maxWidth - titulo.count) / 2)
-    
-    print(borda)
-    print("| \(paddingTitle)\(titulo)\(paddingTitle)|")
-    print(borda)
-    
-}
-
+/*
+    Função para exibir um texto no terminal e esperar 1 segundo para encerrar a função
+     - Parameter text: Texto que será exibido
+*/
 func verbosePrint(_ text: String){
     print("▷ \(text)")
     sleep(1)
 }
 
-func printWithBox(_ text: String, style: String) {
+/*
+Função que executa uma biblioteca chamada boxes. Esse método executa um comando
+de bash e retornar um texto dentro de um cabeçalho
+ - Parameters:
+   - text: Texto que será exibido
+   - style: Modelo do cabeçalho disponível na biblioteca
+   - path: Caminho do diretório onde a biblioteca boxes está alocada
+*/
+func printWithBox(_ text: String, style: String, path: String) {
     let process = Process()
     process.launchPath = "/bin/bash"
-    process.arguments = ["-c", "echo -e '\(text)' | /opt/homebrew/Cellar/boxes/2.3.0/bin/boxes -d \(style)"] // Use o caminho completo para o executável boxes
+    process.arguments = ["-c", "echo -e '\(text)' | \(path) -d \(style)"] // Use o caminho completo para o executável boxes
     
     let pipe = Pipe()
     process.standardOutput = pipe
@@ -98,7 +141,23 @@ func printWithBox(_ text: String, style: String) {
         print(output)
     }
 }
+/*
+    Função usada para imprimir texto como se fosse em um jogo de RPG,
+    onde cada caractere é exibido um por um com um pequeno atraso, dando uma sensação de animação.
+     - Parameter text: Texto que será mostrado
+*/
+func printRPGText(_ text: String) {
+    let delay = 0.1 // Ajuste este valor para controlar a velocidade da animação
 
+    for char in text {
+        // Imprimir uma letra por vez, com um pequeno atraso
+        // terminator força a função print a exibir os caracteres na mesma linha
+        print(char, terminator: "")
+        fflush(stdout)
+        Thread.sleep(forTimeInterval: delay)
+    }
+    print() // Adicionar uma nova linha no final
+}
 
 @discardableResult
 func shell(_ command: String) -> String {
@@ -115,18 +174,6 @@ func shell(_ command: String) -> String {
 
     print(output)
     return output
-}
-
-func printRPGText(_ text: String) {
-    let delay = 0.1 // Ajuste este valor para controlar a velocidade da animação
-
-    for char in text {
-        // Imprimir uma letra por vez, com um pequeno atraso
-        print(char, terminator: "")
-        fflush(stdout)
-        Thread.sleep(forTimeInterval: delay)
-    }
-    print() // Adicionar uma nova linha no final
 }
 
 func callForPokemon(pokemon: String, path: URL, file: String) -> Buddy?{
@@ -159,14 +206,14 @@ func callForBattle(_ adversario: String){
         
         clearTerminalScreen()
         
-        printWithBox("INICIANDO BATALHA", style: "sample")
+        printWithBox("INICIANDO BATALHA", style: "sample", path: boxesPATH)
         
         clearTerminalScreen()
         
         var count: Int = 0
         
         while true{
-            printWithBox("Round \(count)", style: "sample")
+            printWithBox("Round \(count)", style: "sample", path: boxesPATH)
             print(pokemon)
             print(buddy)
             break
